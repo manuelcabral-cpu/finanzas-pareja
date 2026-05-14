@@ -792,12 +792,14 @@ export default function App() {
   }, [session]);
 
   // ── Actions ────────────────────────────────────────
-  const handleAddTx = useCallback(async (tx) => {
-    await insertTx(tx);
+  const handleAddTx = useCallback(async(tx) => {
+    const nuevo = await insertTx(tx);
+    if(nuevo) setAllTxs(prev => [nuevo, ...prev]);
   }, []);
 
-  const handleDeleteTx = useCallback(async (id) => {
+  const handleDeleteTx = useCallback(async(id) => {
     await deleteTx(id);
+    setAllTxs(prev => prev.filter(t => t.id !== id));
   }, []);
 
   const handleTheme = useCallback(async (theme) => {
@@ -825,10 +827,29 @@ export default function App() {
     setPatrimonio(prev => [nuevo, ...prev]);
   }, [session]);
 
-  const handleUpdatePatrimonio = useCallback(async (id, fields) => {
+  const handleUpdatePatrimonio = useCallback(async(id, fields) => {
     await updatePatrimonio(id, fields);
-    setPatrimonio(prev => prev.map(p => p.id === id ? { ...p, ...fields } : p));
-  }, []);
+    setPatrimonio(prev => prev.map(p => p.id === id ? {...p, ...fields} : p));
+
+    // Si se cobra un "por cobrar", agrega ingreso automático al fondo personal
+    if(fields.estado === "cobrado") {
+      const item = patrimonio.find(p => p.id === id);
+      if(item && item.tipo === "por_cobrar") {
+        const tx = {
+          type: "income",
+          amount: parseFloat(item.monto),
+          category: "Cobro de deuda",
+          description: item.descripcion,
+          date: new Date().toISOString().split("T")[0],
+          user_id: session.user.id,
+          fund_id: `personal_${session.user.id}`
+        };
+        const nuevo = await insertTx(tx);
+        if(nuevo) setAllTxs(prev => [nuevo, ...prev]);
+      }
+      // Si es inversión → no agrega nada, solo cambia el estado
+    }
+  }, [patrimonio, session]);
 
   const handleDeletePatrimonio = useCallback(async (id) => {
     await deletePatrimonio(id);
