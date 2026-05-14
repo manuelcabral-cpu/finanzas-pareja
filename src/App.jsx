@@ -246,8 +246,6 @@ function FundView({th, fundId, fundType, title, icon, subtitle, userId, allTxs, 
     return new Fund({ id:fundId, type:fundType, transactions: txs });
   }, [allTxs, fundId, fundType]);
 
-  console.log("balance:", fund.balance, "txs:", fund.transactions.map(t => ({type:t.type, amount:t.amount, isIncome:t.isIncome})));
-
   const pieData = fund.byCategory;
   const card = {background:th.sf,borderRadius:20,padding:20,boxShadow:`0 2px 16px ${th.br}20`,marginBottom:16};
 
