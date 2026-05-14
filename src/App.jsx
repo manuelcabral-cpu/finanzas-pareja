@@ -101,7 +101,7 @@ const INITIAL = { activeModule: "dashboard" };
 /* ═══════════════════════════════════════════════════════
    HELPERS
 ═══════════════════════════════════════════════════════ */
-const fmt = n => `$${Math.abs(n).toLocaleString("es-AR",{minimumFractionDigits:0,maximumFractionDigits:0})}`;
+const fmt = n => `$${Math.abs(n).toLocaleString("es-AR",{minimumFractionDigits:0,maximumFractionDigits:0})}`; 
 const mkFund = (data) => {
   const f = new Fund({...data, transactions: (data.transactions||[]).map(t => new Transaction(t))});
   return f;
@@ -240,8 +240,10 @@ function FundView({th, fundId, fundType, title, icon, subtitle, userId, allTxs, 
   const [showModal, setShowModal] = useState(false);
 
   const fund = useMemo(() => {
-    const txs = allTxs.filter(t => t.fund_id === fundId || t.fundId === fundId);
-    return mkFund({ id:fundId, type:fundType, transactions: txs });
+    const txs = allTxs
+      .filter(t => (t.fund_id || t.fundId) === fundId)
+      .map(t => new Transaction(t));
+    return new Fund({ id:fundId, type:fundType, transactions: txs });
   }, [allTxs, fundId, fundType]);
 
   const pieData = fund.byCategory;
