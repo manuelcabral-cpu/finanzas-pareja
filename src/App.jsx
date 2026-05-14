@@ -767,11 +767,12 @@ export default function App() {
     const load = async () => {
       setLoading(true);
       const [txs, profs, pat] = await Promise.all([getTxs(), getProfiles(), getPatrimonio()]);
-      setPatrimonio(pat);
+      
       setAllTxs(txs);
       const map = {};
       profs.forEach(p => { map[p.id] = { id:p.id, name:p.name, emoji:p.emoji||"👤", theme:p.theme||"ocean", budget:p.budget||100000 }; });
       setUsers(map);
+      setPatrimonio(pat);
       setLoading(false);
     };
     load();
