@@ -623,7 +623,7 @@ function PatrimonioView({th, userId, users, allTxs, patrimonio, onAdd, onUpdate,
         </div>
         <div style={{fontSize:11,opacity:.75,marginBottom:3,letterSpacing:.5,position:"relative"}}>PATRIMONIO TOTAL</div>
         <div style={{fontSize:isMobile?38:48,fontWeight:800,letterSpacing:-1,position:"relative",color:fund.balance<0?"#fca5a5":"#fff"}}>
-          {fund.balance<0 ? "-" : ""}{fmt(fund.balance)}
+          {patrimonioTotal<0 ? "-" : ""}{fmt(patrimonioTotal)}
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16,marginTop:16,position:"relative"}}>
           <div>
