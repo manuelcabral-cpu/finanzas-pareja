@@ -1,6 +1,6 @@
 import { useState, useReducer, useMemo, useEffect, useCallback } from "react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { Plus, Trash2, X, Home, User, Users, ShoppingBag, Settings } from "lucide-react";
+//import { Plus, Trash2, X, Home, User, Users, ShoppingBag, Settings } from "lucide-react";
 //import { supabase, getTxs, insertTx, deleteTx, updateProfile, getProfiles } from "./lib/supabase";
 
 //---- Imports para seccion patrimonio ------------------------------
