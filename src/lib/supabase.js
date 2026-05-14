@@ -41,3 +41,33 @@ export const getProfiles = async () => {
   if (error) throw error;
   return data;
 };
+
+//── Agregado de patrimonio ──────────────────────────
+export const getPatrimonio = async () => {
+  const { data, error } = await supabase
+    .from("patrimonio")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data;
+};
+
+export const insertPatrimonio = async (item) => {
+  const { data, error } = await supabase
+    .from("patrimonio")
+    .insert(item)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+};
+
+export const updatePatrimonio = async (id, fields) => {
+  const { error } = await supabase.from("patrimonio").update(fields).eq("id", id);
+  if (error) throw error;
+};
+
+export const deletePatrimonio = async (id) => {
+  const { error } = await supabase.from("patrimonio").delete().eq("id", id);
+  if (error) throw error;
+};

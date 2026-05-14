@@ -3,6 +3,13 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveCo
 import { Plus, Trash2, X, Home, User, Users, ShoppingBag, Settings } from "lucide-react";
 import { supabase, getTxs, insertTx, deleteTx, updateProfile, getProfiles } from "./lib/supabase";
 
+//---- Imports para seccion patrimonio ------------------------------
+import { supabase, getTxs, insertTx, deleteTx, updateProfile, getProfiles,
+  getPatrimonio, insertPatrimonio, updatePatrimonio, deletePatrimonio
+} from "./lib/supabase";
+import { Plus, Trash2, X, Home, User, Users, ShoppingBag, Settings, TrendingUp } from "lucide-react";
+
+
 /* ═══════════════════════════════════════════════════════
    STYLES
 ═══════════════════════════════════════════════════════ */
@@ -108,6 +115,7 @@ function AuthScreen() {
   const [pass,    setPass]    = useState("");
   const [error,   setError]   = useState("");
   const [loading, setLoading] = useState(false);
+  const [patrimonio, setPatrimonio] = useState([]);
 
   const login = async () => {
     setLoading(true); setError("");
@@ -532,17 +540,204 @@ function SettingsView({th, userId, users, onTheme, onBudget, onName, onLogout}) 
   );
 }
 
+//---- Agregado de nuevos navs
+/* ═══ PATRIMONIO VIEW ═══ */
+function PatrimonioView({th, userId, users, allTxs, patrimonio, onAdd, onUpdate, onDelete, isMobile}) {
+  const [showModal, setShowModal] = useState(false);
+  const [tipo, setTipo]           = useState("por_cobrar");
+  const [desc, setDesc]           = useState("");
+  const [monto, setMonto]         = useState("");
+  const [persona, setPersona]     = useState("");
+  const [fechaEst, setFechaEst]   = useState("");
+  const [saving, setSaving]       = useState(false);
+
+  const porCobrar   = patrimonio.filter(p => p.tipo === "por_cobrar"  && p.estado === "pendiente");
+  const inversiones = patrimonio.filter(p => p.tipo === "inversion"   && p.estado === "pendiente");
+  const cobrados    = patrimonio.filter(p => p.estado === "cobrado");
+
+  const totalPorCobrar   = porCobrar.reduce((a,p)   => a + parseFloat(p.monto), 0);
+  const totalInversiones = inversiones.reduce((a,p) => a + parseFloat(p.monto), 0);
+
+  const myFund = (() => {
+    const txs = allTxs.filter(t => (t.fund_id||t.fundId) === `personal_${userId}`);
+    return txs.reduce((a,t) => t.type==="income" ? a+parseFloat(t.amount) : a-parseFloat(t.amount), 0);
+  })();
+
+  const patrimonioTotal = myFund + totalPorCobrar + totalInversiones;
+
+  const submit = async () => {
+    if(!desc||!monto) return;
+    setSaving(true);
+    await onAdd({tipo, descripcion:desc, monto:parseFloat(monto), persona, fecha_est:fechaEst||null, estado:"pendiente"});
+    setDesc(""); setMonto(""); setPersona(""); setFechaEst(""); setSaving(false);
+    setShowModal(false);
+  };
+
+  const card  = {background:th.sf, borderRadius:20, padding:20, boxShadow:`0 2px 16px ${th.br}20`, marginBottom:14};
+  const col   = isMobile ? "1fr" : "1fr 1fr";
+  const inp   = {width:"100%", padding:"11px 14px", borderRadius:12, border:`1.5px solid ${th.br}`, background:th.sa, color:th.tx, fontSize:14, fontFamily:"Sora,sans-serif", outline:"none"};
+
+  const ItemCard = ({item}) => (
+    <div style={{display:"flex",alignItems:"center",gap:10,padding:"12px",background:th.bg,borderRadius:14,marginBottom:8}}>
+      <div style={{width:40,height:40,borderRadius:12,background:item.tipo==="por_cobrar"?"rgba(234,179,8,0.15)":"rgba(99,102,241,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>
+        {item.tipo==="por_cobrar"?"💸":"🔒"}
+      </div>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontWeight:600,fontSize:isMobile?13:15,color:th.tx,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.descripcion}</div>
+        <div style={{fontSize:isMobile?11:12,color:th.mt,marginTop:1}}>
+          {item.persona && `${item.persona} · `}
+          {item.fecha_est && `Vence: ${item.fecha_est}`}
+        </div>
+      </div>
+      <div style={{fontWeight:700,fontSize:isMobile?13:15,color:item.tipo==="por_cobrar"?"#eab308":"#6366f1",flexShrink:0}}>
+        {fmt(item.monto)}
+      </div>
+      {item.estado==="pendiente" && (
+        <button onClick={()=>onUpdate(item.id,{estado:"cobrado"})}
+          style={{background:"rgba(16,185,129,0.15)",border:"none",borderRadius:8,padding:"5px 8px",cursor:"pointer",fontSize:11,color:"#10b981",fontWeight:600,fontFamily:"Sora,sans-serif",flexShrink:0}}>
+          ✓
+        </button>
+      )}
+      <button onClick={()=>onDelete(item.id)}
+        style={{background:"none",border:"none",cursor:"pointer",color:th.mt,padding:4,display:"flex",alignItems:"center",flexShrink:0}}>
+        <Trash2 size={14}/>
+      </button>
+    </div>
+  );
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{background:th.gr,borderRadius:24,padding:28,marginBottom:16,color:"#fff",position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:-40,right:-40,width:160,height:160,background:"rgba(255,255,255,0.08)",borderRadius:"50%"}}/>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,position:"relative"}}>
+          <span style={{fontSize:24}}>📊</span>
+          <div>
+            <div style={{fontWeight:700,fontSize:isMobile?17:20}}>Mi Patrimonio</div>
+            <div style={{opacity:.75,fontSize:isMobile?11:13,marginTop:1}}>Disponible + Por cobrar + Invertido</div>
+          </div>
+        </div>
+        <div style={{fontSize:11,opacity:.75,marginBottom:3,letterSpacing:.5,position:"relative"}}>PATRIMONIO TOTAL</div>
+        <div style={{fontSize:isMobile?38:48,fontWeight:800,letterSpacing:-1,position:"relative"}}>{fmt(patrimonioTotal)}</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16,marginTop:16,position:"relative"}}>
+          <div>
+            <div style={{fontSize:10,opacity:.7,letterSpacing:.5}}>💵 DISPONIBLE</div>
+            <div style={{fontWeight:700,fontSize:isMobile?14:16,marginTop:2}}>{fmt(myFund)}</div>
+          </div>
+          <div>
+            <div style={{fontSize:10,opacity:.7,letterSpacing:.5}}>⏳ POR COBRAR</div>
+            <div style={{fontWeight:700,fontSize:isMobile?14:16,marginTop:2}}>{fmt(totalPorCobrar)}</div>
+          </div>
+          <div>
+            <div style={{fontSize:10,opacity:.7,letterSpacing:.5}}>🔒 INVERTIDO</div>
+            <div style={{fontWeight:700,fontSize:isMobile?14:16,marginTop:2}}>{fmt(totalInversiones)}</div>
+          </div>
+        </div>
+      </div>
+
+      <button onClick={()=>setShowModal(true)}
+        style={{width:"100%",padding:14,borderRadius:16,border:"none",background:th.gr,color:"#fff",fontWeight:700,fontSize:isMobile?14:16,fontFamily:"Sora,sans-serif",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:16}}>
+        <Plus size={18}/> Agregar
+      </button>
+
+      <div style={{display:"grid",gridTemplateColumns:col,gap:14}}>
+        {/* Por cobrar */}
+        <div style={card}>
+          <div style={{fontWeight:700,fontSize:isMobile?14:16,color:th.tx,marginBottom:4}}>⏳ Por cobrar</div>
+          <div style={{fontSize:isMobile?11:13,color:th.mt,marginBottom:14}}>Total: <span style={{fontWeight:700,color:"#eab308"}}>{fmt(totalPorCobrar)}</span></div>
+          {porCobrar.length===0
+            ? <div style={{textAlign:"center",color:th.mt,padding:"16px 0",fontSize:13}}>Sin deudas pendientes 🎉</div>
+            : porCobrar.map(item=><ItemCard key={item.id} item={item}/>)
+          }
+        </div>
+
+        {/* Inversiones */}
+        <div style={card}>
+          <div style={{fontWeight:700,fontSize:isMobile?14:16,color:th.tx,marginBottom:4}}>🔒 Invertido</div>
+          <div style={{fontSize:isMobile?11:13,color:th.mt,marginBottom:14}}>Total: <span style={{fontWeight:700,color:"#6366f1"}}>{fmt(totalInversiones)}</span></div>
+          {inversiones.length===0
+            ? <div style={{textAlign:"center",color:th.mt,padding:"16px 0",fontSize:13}}>Sin inversiones registradas</div>
+            : inversiones.map(item=><ItemCard key={item.id} item={item}/>)
+          }
+        </div>
+      </div>
+
+      {/* Historial cobrados */}
+      {cobrados.length>0 && (
+        <div style={card}>
+          <div style={{fontWeight:700,fontSize:isMobile?14:16,color:th.tx,marginBottom:14}}>✅ Cobrados / Vencidos</div>
+          {cobrados.map(item=>(
+            <div key={item.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:th.bg,borderRadius:14,marginBottom:8,opacity:.6}}>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13,fontWeight:600,color:th.tx}}>{item.descripcion}</div>
+                <div style={{fontSize:11,color:th.mt}}>{item.persona}</div>
+              </div>
+              <div style={{fontWeight:700,fontSize:13,color:"#10b981"}}>{fmt(item.monto)}</div>
+              <button onClick={()=>onDelete(item.id)} style={{background:"none",border:"none",cursor:"pointer",color:th.mt,padding:4,display:"flex",alignItems:"center"}}>
+                <Trash2 size={13}/>
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Modal */}
+      {showModal && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:16,backdropFilter:"blur(4px)"}}>
+          <div style={{background:th.sf,borderRadius:24,padding:24,width:"100%",maxWidth:480,boxShadow:"0 24px 64px rgba(0,0,0,0.25)",maxHeight:"90vh",overflowY:"auto"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+              <h3 style={{fontWeight:700,fontSize:18,color:th.tx}}>Nuevo registro</h3>
+              <button onClick={()=>setShowModal(false)} style={{background:th.sa,border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <X size={15} color={th.mt}/>
+              </button>
+            </div>
+
+            <div style={{display:"flex",background:th.sa,borderRadius:14,padding:4,marginBottom:16,gap:4}}>
+              {[["por_cobrar","⏳ Por cobrar"],["inversion","🔒 Inversión"]].map(([val,label])=>(
+                <button key={val} onClick={()=>setTipo(val)}
+                  style={{flex:1,padding:10,borderRadius:10,border:"none",fontFamily:"Sora,sans-serif",fontWeight:700,fontSize:13,cursor:"pointer",background:tipo===val?th.pr:"transparent",color:tipo===val?"#fff":th.mt}}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <label style={{fontSize:11,fontWeight:600,color:th.mt,display:"block",marginBottom:6,letterSpacing:.5}}>MONTO</label>
+            <input type="number" placeholder="0" value={monto} onChange={e=>setMonto(e.target.value)} style={{...inp,fontSize:26,fontWeight:800,marginBottom:14}}/>
+
+            <label style={{fontSize:11,fontWeight:600,color:th.mt,display:"block",marginBottom:6,letterSpacing:.5}}>DESCRIPCIÓN</label>
+            <input type="text" placeholder={tipo==="por_cobrar"?"Ej: Préstamo a Juan":"Ej: Plazo fijo Banco Nación"} value={desc} onChange={e=>setDesc(e.target.value)} style={{...inp,marginBottom:14}}/>
+
+            {tipo==="por_cobrar" && <>
+              <label style={{fontSize:11,fontWeight:600,color:th.mt,display:"block",marginBottom:6,letterSpacing:.5}}>QUIÉN TE DEBE <span style={{fontWeight:400,textTransform:"lowercase"}}>(opcional)</span></label>
+              <input type="text" placeholder="Nombre" value={persona} onChange={e=>setPersona(e.target.value)} style={{...inp,marginBottom:14}}/>
+            </>}
+
+            <label style={{fontSize:11,fontWeight:600,color:th.mt,display:"block",marginBottom:6,letterSpacing:.5}}>FECHA ESTIMADA <span style={{fontWeight:400,textTransform:"lowercase"}}>(opcional)</span></label>
+            <input type="date" value={fechaEst} onChange={e=>setFechaEst(e.target.value)} style={{...inp,marginBottom:20}}/>
+
+            <button onClick={submit} disabled={!desc||!monto||saving}
+              style={{width:"100%",padding:14,borderRadius:14,border:"none",background:(!desc||!monto)?th.br:th.gr,color:"#fff",fontWeight:700,fontSize:15,fontFamily:"Sora,sans-serif",cursor:(!desc||!monto)?"not-allowed":"pointer"}}>
+              {saving?"Guardando...":"Agregar"}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 /* ═══════════════════════════════════════════════════════
    NAV
 ═══════════════════════════════════════════════════════ */
 const NAV = [
-  {id:"dashboard", label:"Inicio",   Icon:Home},
-  {id:"personal",  label:"Personal", Icon:User},
-  {id:"shared",    label:"Común",    Icon:Users},
-  {id:"business",  label:"Negocio",  Icon:ShoppingBag},
-  {id:"settings",  label:"Config",   Icon:Settings},
+  {id:"dashboard",  label:"Inicio",     Icon:Home},
+  {id:"personal",   label:"Personal",   Icon:User},
+  {id:"shared",     label:"Común",      Icon:Users},
+  {id:"business",   label:"Negocio",    Icon:ShoppingBag},
+  {id:"patrimonio", label:"Patrimonio", Icon:TrendingUp},
+  {id:"settings",   label:"Config",     Icon:Settings},
 ];
-
 /* ═══════════════════════════════════════════════════════
    APP
 ═══════════════════════════════════════════════════════ */
@@ -571,7 +766,8 @@ export default function App() {
     if (!session) { setLoading(false); return; }
     const load = async () => {
       setLoading(true);
-      const [txs, profs] = await Promise.all([getTxs(), getProfiles()]);
+      const [txs, profs, pat] = await Promise.all([getTxs(), getProfiles(), getPatrimonio()]);
+      setPatrimonio(pat);
       setAllTxs(txs);
       const map = {};
       profs.forEach(p => { map[p.id] = { id:p.id, name:p.name, emoji:p.emoji||"👤", theme:p.theme||"ocean", budget:p.budget||100000 }; });
@@ -620,12 +816,22 @@ export default function App() {
     await updateProfile(uid, {name});
   }, [session]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setSession(null);
-    setUsers({});
-    setAllTxs([]);
-  };
+  const handleLogout = async()=>{ await supabase.auth.signOut(); setSession(null); setUsers({}); setAllTxs([]); setPatrimonio([]); };
+
+  const handleAddPatrimonio = useCallback(async (item) => {
+    const nuevo = await insertPatrimonio({ ...item, user_id: session.user.id });
+    setPatrimonio(prev => [nuevo, ...prev]);
+  }, [session]);
+
+  const handleUpdatePatrimonio = useCallback(async (id, fields) => {
+    await updatePatrimonio(id, fields);
+    setPatrimonio(prev => prev.map(p => p.id === id ? { ...p, ...fields } : p));
+  }, []);
+
+  const handleDeletePatrimonio = useCallback(async (id) => {
+    await deletePatrimonio(id);
+    setPatrimonio(prev => prev.filter(p => p.id !== id));
+  }, []);
 
   // ── Render ─────────────────────────────────────────
   if (!session) return <AuthScreen/>;
@@ -659,6 +865,10 @@ export default function App() {
         return <FundView th={th} fundId="business" fundType="business"
           title="Emprendimiento 🍕" icon="🍕" subtitle="Ingresos y gastos del negocio"
           userId={userId} allTxs={allTxs} onAdd={handleAddTx} onDelete={handleDeleteTx}/>;
+      
+      case "patrimonio": 
+        return <PatrimonioView th={th} userId={userId} users={users} allTxs={allTxs} patrimonio={patrimonio} onAdd={handleAddPatrimonio} onUpdate={handleUpdatePatrimonio} onDelete={handleDeletePatrimonio} isMobile={isMobile}/>;
+      
       case "settings":
         return <SettingsView th={th} userId={userId} users={users}
           onTheme={handleTheme} onBudget={handleBudget} onName={handleName} onLogout={handleLogout}/>;
