@@ -115,7 +115,7 @@ function AuthScreen() {
   const [pass,    setPass]    = useState("");
   const [error,   setError]   = useState("");
   const [loading, setLoading] = useState(false);
-  const [patrimonio, setPatrimonio] = useState([]);
+  
 
   const login = async () => {
     setLoading(true); setError("");
@@ -750,6 +750,7 @@ export default function App() {
   const [users,    setUsers]    = useState({});
   const [allTxs,   setAllTxs]   = useState([]);
   const [loading,  setLoading]  = useState(true);
+  const [patrimonio, setPatrimonio] = useState([]);
 
   // ── Auth listener ──────────────────────────────────
   useEffect(() => {
