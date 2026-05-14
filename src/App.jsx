@@ -262,8 +262,8 @@ function FundView({th, fundId, fundType, title, icon, subtitle, userId, allTxs, 
           </div>
         </div>
         <div style={{fontSize:11,opacity:.75,marginBottom:3,letterSpacing:.5,position:"relative"}}>BALANCE ACTUAL</div>
-        <div style={{fontSize:40,fontWeight:800,letterSpacing:-1,position:"relative",color:fund.balance<0?"#fca5a5":"#fff"}}>
-          {fund.balance<0?"-":""}{fmt(fund.balance)}
+        <div style={{fontSize:40,fontWeight:800,letterSpacing:-1,position:"relative",color:patrimonioTotal<0?"#fca5a5":"#fff"}}>
+          {patrimonioTotal<0?"-":""}{fmt(patrimonioTotal)}
         </div>
         <div style={{display:"flex",gap:24,marginTop:14,position:"relative"}}>
           <div><div style={{fontSize:10,opacity:.7,letterSpacing:.5}}>↑ INGRESOS</div><div style={{fontWeight:700,fontSize:15,marginTop:2}}>{fmt(fund.totalIncome)}</div></div>
@@ -411,8 +411,8 @@ function Dashboard({th, userId, users, allTxs, dispatch, isMobile}) {
               </div>
             </div>
             <div style={{textAlign:"right"}}>
-              <div style={{fontWeight:800,fontSize:isMobile?15:18,color:s.fund.balance>=0?th.pr:"#f43f5e"}}>{fmt(s.fund.balance)}</div>
-              <div style={{fontSize:isMobile?10:12,color:th.mt,marginTop:1}}>{s.fund.balance>=0?"superávit":"déficit"}</div>
+              <div style={{fontWeight:800,fontSize:isMobile?15:18,color:s.patrimonioTotal>=0?th.pr:"#f43f5e"}}>{fmt(s.patrimonioTotal)}</div>
+              <div style={{fontSize:isMobile?10:12,color:th.mt,marginTop:1}}>{s.patrimonioTotal>=0?"superávit":"déficit"}</div>
             </div>
           </div>
         ))}
@@ -622,7 +622,7 @@ function PatrimonioView({th, userId, users, allTxs, patrimonio, onAdd, onUpdate,
           </div>
         </div>
         <div style={{fontSize:11,opacity:.75,marginBottom:3,letterSpacing:.5,position:"relative"}}>PATRIMONIO TOTAL</div>
-        <div style={{fontSize:isMobile?38:48,fontWeight:800,letterSpacing:-1,position:"relative",color:fund.balance<0?"#fca5a5":"#fff"}}>
+        <div style={{fontSize:isMobile?38:48,fontWeight:800,letterSpacing:-1,position:"relative",color:patrimonioTotal<0?"#fca5a5":"#fff"}}>
           {patrimonioTotal<0 ? "-" : ""}{fmt(patrimonioTotal)}
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16,marginTop:16,position:"relative"}}>
